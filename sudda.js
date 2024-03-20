@@ -103,7 +103,7 @@
     /**
     * 화투 객체의 인덱스에 넣을 랜덤 인덱스 생성, 이미 있는 인덱스는 제외하고 생성
     * @param {object} hwatooList 오브젝트
-	* @returns {number} randomIndex 인덱스
+    * @returns {number} randomIndex 인덱스
     */
 
 	let setRandomIndex = function(hwatooList) {
@@ -115,8 +115,8 @@
 
 	/**
     * 새로운 게임을 하기 위해 화투 리스트를 한 번 초기화하고,
-	* hwatoo 오브젝트에 num, type, index를 부여한 후,
-	* hwatooList에 push
+    * hwatoo 오브젝트에 num, type, index를 부여한 후,
+    * hwatooList에 push
     * @param {object} hwatooList 오브젝트
     */
 
