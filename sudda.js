@@ -100,11 +100,11 @@
 
 	// ===================================  변수부 ===================================
 
-    /**
-    * 화투 객체의 인덱스에 넣을 랜덤 인덱스 생성, 이미 있는 인덱스는 제외하고 생성
-    * @param {object} hwatooList 오브젝트
-    * @returns {number} randomIndex 인덱스
-    */
+  /**
+   * 화투 객체의 인덱스에 넣을 랜덤 인덱스 생성, 이미 있는 인덱스는 제외하고 생성
+   * @param {object} hwatooList 오브젝트
+   * @returns {number} randomIndex 인덱스
+   */ 
 
 	let setRandomIndex = function(hwatooList) {
 		const randomIndex =  Math.floor(Math.random() * 20);
@@ -113,12 +113,12 @@
 		}
 	}
 
-	/**
-    * 새로운 게임을 하기 위해 화투 리스트를 한 번 초기화하고,
-    * hwatoo 오브젝트에 num, type, index를 부여한 후,
-    * hwatooList에 push
-    * @param {object} hwatooList 오브젝트
-    */
+  /**
+   * 새로운 게임을 하기 위해 화투 리스트를 한 번 초기화하고,
+   * hwatoo 오브젝트에 num, type, index를 부여한 후,
+   * hwatooList에 push
+   * @param {object} hwatooList 오브젝트
+   */ 
 
 	let initializeHwatooList = function(hwatooList) {
 		hwatooList.init;
@@ -155,6 +155,27 @@
 
 	}
 
+
+  /**
+   * 유저들에게 화투를 나눠주는 함수
+   * @param {array} 화투패 리스트
+   */ 
+	let getHandHwatoo = function(hwatooList) {
+    const returnHwatoo = hwatooList[hwatooList.length - 1];
+
+    getList.pop();
+
+    return returnHwatoo;
+  }
+
+  // 족보 결정
+  // 받은 두 장의 화투패를 보고 저장해둔 족보를 대입함
+
+  let checkGwangDdang = function(paeList) {
+
+  }
+
+
 	// ===================================  함수부 ===================================
 
 	// console.log(hwatooList.list);
@@ -165,3 +186,5 @@
 		console.log(Object.entries(hwatooList.list[i]));
 		
 	}
+
+	
