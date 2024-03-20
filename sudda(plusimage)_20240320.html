@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            img {
+                float: right;
+                position: sticky;
+                top: 0px; /* 도달했을때 고정시킬 위치 */
+            }
+        </style>
+    </head>
+    <body>
+        
+        <img src="섯다족보표.jpg" >
+
+        <script>
+            // 유저 데이터, 화투 데이터, 족보 데이터
+            // 유저 : 이름, 패 두장, 족보, 승리횟수
+            // 화투 : 1 ~ 10까지의 개월, 광, 끗, 띠 구분, 몇번째 순서에 있는 지
+            // 족보 : 38광땡부터 망통까지, 특수족보(구사, 멍텅구리, 땡잡이, 암행어사)
+            // 족보마다 우선순위를 부여하여 승패를 결정할 때 편하게 함(높을 수록 좋음)
+            // 화투 배급 구현
+            // 화투 섞기 -> 화투를 뒤에서부터 배급
+            // 화투를 받으면 오름차순으로 정렬하여 족보 결정할 때 경우의 수를 줄임
+            // 족보 결정 구현
+            // 받은 두 장의 화투 패를 보고 저장해둔 족보를 대입함
+            // 예외 상황 구현
+            // 구사, 멍텅구사와 같은 무승부 상황
+            // 암행어사, 땡잡이같은 땡 상대로 이길 수 있는 상황
+            // 승리 횟수에 따른 게임 승리 구현
+            // 한 판마다 승리횟수를 누적하여 10판을 이기면 게임이 끝나는 상황 구현
+            
+            // 화투 데이터 모음
+            // 화투 숫자
+            const HwatooNumberEnum = {
+                num1 : 1,
+                num2 : 2,
+                num3 : 3,
+                num4 : 4,
+                num5 : 5,
+                num6 : 6,
+                num7 : 7,
+                num8 : 8,
+                num9 : 9,
+                num10 : 10
+            }
+            
+            // 화투 타입
+            const HwatooTypeEnum = {
+                HwatooType1 : "광",
+                HwatooType2 : "끗",
+                HwatooType3 : "띠"
+            }
+            
+            // 족보
+            const HwatooJokboEnum = {
+                Jokbotype1 : "광땡",
+                Jokbotype2 : "땡",
+                Jokbotype3 : "알리",
+                Jokbotype4 : "독사",
+                Jokbotype5 : "구삥",
+                Jokbotype6 : "장삥",
+                Jokbotype7 : "장사",
+                Jokbotype8 : "세륙",
+                Jokbotype9 : "멍텅구리",
+                Jokbotype10 : "구사",
+                Jokbotype11 : "암행어사",
+                Jokbotype12 : "땡잡이",
+                Jokbotype13 : "끗"
+            }
+            
+            // 게임 내용 출력
+            const displayStringEnum = {
+                displaystr1 : "</br>",
+                displaystr2 : "승자 : ",
+                displaystr3 : "승)",
+                displaystr4 : "님이 받은 패 :",
+                displaystr5 : ", ",
+                displaystr6 : "  (",
+                displaystr7 : ")",
+                displaystr8 : "나가리",
+                displaystr9 : "승리",
+                displaystr10 : "무승부"
+            }
+            
+            // 유저 데이터, 화투 데이터, 족보 데이터를 클래스로 생성
+            
+            // 유저 : 이름, 패 두장, 족보, 승리 횟수
+            class User {
+                name;
+                pae1;
+                pae2;
+                jokbo;
+                wincount = 0;
+            
+                setName(name) {
+                    this.name = name;
+                }
+            
+                setPae(pae1, pae2) {
+                    this.pae1 = pae1;
+                    this.pae2 = pae2;
+                }
+            
+                plusWinCount() {
+                    this.wincount += 1;
+                }
+            }
+            
+            // 화투 : 1 ~ 10까지의 개월 / 광, 끗, 띠 구분 / 화투패 뭉치의 몇번째 순서
+            class Hwatoopae {
+                num;
+                type;
+                index;
+            
+                constructor(num, type, index) {
+                    this.num = num;
+                    this.type = type;
+                    this.index = index;
+                }
+            
+            }
+            
+            class HwatoopaeDAO {
+                static HwatoopaeList = [];
+            
+                // 화투패뭉치 초기화
+                static initHwatoopaeList() {
+                    this.HwatoopaeList = [];
+                }
+            
+                // 화투패 추가
+                static insertHwatoo(num, type, index) {
+                    let Hwatoo = new Hwatoopae(num, type, index);
+                    this.HwatoopaeList.push(Hwatoo);
+                }
+            
+                // 화투패 정렬
+                static sortHwatoopaeList() {
+                    this.HwatoopaeList.sort((a, b) => {
+                        if (a.index < b.index) {
+                            return -1;
+                        } else  if (a.index > b.index) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    })
+                }
+            
+            }
+            
+            // 족보 : 족보이름, 우선순위
+            // 족보마다 우선순위를 부여하여 승패를 결정할 때 편하게 함(높을 수록 좋은 패)
+            // 38광땡 : 28, 13, 18광땡 : 27, 광땡 : 17 ~ 26
+            // 알리 : 16, 독사 : 15, 구삥 : 14, 장삥 : 13, 장사 : 12, 세륙 : 11
+            // 끗들 : 0 ~ 10
+            // 멍텅구리, 구사, 암행어사, 땡장이는 특수 상황이 아니면 끗 판정이기에
+            // 일단 우선순위는 끗과 동일 
+            
+            class Jokbo {
+                name;
+                priority;
+            
+                setJokbo(name, priority) {
+                    this.name = name;
+                    this.priority = priority;
+                }
+            }
+            
+            // ====================================================== 변수 부 ======================================================
+            
+            // 화투 배급 구현
+            // 화투 섞기 -> 화투를 배열 뒤에서부터 배급
+            // 화투를 받으면 화투 숫자와 타입을 기준으로 오름차순으로 정렬하여 족보 결정할 때 경우의 수를 줄임
+            
+            // 화투패 순서 함수
+            function setRandomIndex() {
+                let randomIndex = 0;
+            
+                for(;;) {
+                    // 1~20까지의 수를 랜덤으로 하나 생성
+                    randomIndex = Math.floor(Math.random() * 20);
+                    // 생성한 화투패 중에서 동일한 인덱스가 있는 지 확인
+                    check = false;
+                    for (let i = 0; i < HwatoopaeDAO.HwatoopaeList.length; i++) {
+                        // 만약 이미 만든 패에서 같은 인덱스를 가지고 있는 게 있다면 다시 뽑기
+                        if (randomIndex === HwatoopaeDAO.HwatoopaeList[i].index) {
+                            check = true;
+                            break;
+                        }   
+                    }
+            
+                    // 겹치는 인덱스가 없다면 뽑은 랜덤 수를 들고가기
+                    if (check === false) {
+                        break;
+                    }
+                }
+            
+                return randomIndex;
+            }
+            
+            // 화투패 뭉치 구현
+            function initialazeHwatoopaeList(HwatoopaeDAO) {
+                HwatoopaeDAO.initHwatoopaeList();
+            
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num1, HwatooTypeEnum.HwatooType1, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num1, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num2, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num2, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num3, HwatooTypeEnum.HwatooType1, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num3, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num4, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num4, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num5, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num5, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num6, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num6, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num7, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num7, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num8, HwatooTypeEnum.HwatooType1, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num8, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num9, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num9, HwatooTypeEnum.HwatooType3, setRandomIndex());
+                HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num10, HwatooTypeEnum.HwatooType2, setRandomIndex()); HwatoopaeDAO.insertHwatoo(HwatooNumberEnum.num10, HwatooTypeEnum.HwatooType3, setRandomIndex());
+            }
+            
+            // 플레이어한테 화투패를 나눠주는 함수
+            function getHandHwatoo() {
+                // 화투패 뭉치 맨 뒤에 있는 화투패
+                const returnHwatoo = HwatoopaeDAO.HwatoopaeList[HwatoopaeDAO.HwatoopaeList.length - 1];
+                
+                // 맨 뒤에 있는 화투패 제거
+                HwatoopaeDAO.HwatoopaeList.pop();
+                
+                return returnHwatoo;
+            }
+            
+            // 족보 결정 구현
+            // 받은 두 장의 화투 패를 보고 저장해둔 족보를 대입함
+            
+            // 광땡 확인
+            function checkGwangDdaeng(User) {
+                // 38광땡
+                if ((User.pae1.num === HwatooNumberEnum.num3 && User.pae1.type === HwatooTypeEnum.HwatooType1) &&
+                (User.pae2.num === HwatooNumberEnum.num8 && User.pae2.type === HwatooTypeEnum.HwatooType1)) {
+                    User.jokbo = String(User.pae1.num) + String(User.pae2.num) + HwatooJokboEnum.Jokbotype1;
+                    User.priority = 28;
+                    return true;
+                } // 13광땡
+                else if ((User.pae1.num === HwatooNumberEnum.num1 && User.pae1.type === HwatooTypeEnum.HwatooType1) &&
+                (User.pae2.num === HwatooNumberEnum.num3 && User.pae2.type === HwatooTypeEnum.HwatooType1)) {
+                    User.jokbo = String(User.pae1.num) + String(User.pae2.num) + HwatooJokboEnum.Jokbotype1;
+                    User.priority = 27;
+                    return true;
+                } // 18광땡
+                else if ((User.pae1.num === HwatooNumberEnum.num1 && User.pae1.type === HwatooTypeEnum.HwatooType1) &&
+                (User.pae2.num === HwatooNumberEnum.num8 && User.pae2.type === HwatooTypeEnum.HwatooType1)) {
+                    User.jokbo = String(User.pae1.num) + String(User.pae2.num) + HwatooJokboEnum.Jokbotype1;
+                    User.priority = 27;
+                    return true;
+                }
+                else {
+                    return undefined;
+                }
+                
+            }
+            
+            // 일반 땡 확인
+            function checkDdaeng(User) {
+                if (User.pae1.num === User.pae2.num) {
+                    if (User.pae1.num === 10) {
+                    // 장떙
+                        User.jokbo = "장" + HwatooJokboEnum.Jokbotype2;
+                    } else {
+                        // 그 밑에 땡들
+                        User.jokbo = String(User.pae1.num) + HwatooJokboEnum.Jokbotype2;
+                    }
+                    User.priority = 16 + User.pae1.num;
+                    return true;
+                } else {
+                    return undefined;
+                }
+            }
+            
+            // 중간 족보 확인
+            function checkMiddleJokbo(User) {
+                if (User.pae1.num === HwatooNumberEnum.num1 && 
+                    User.pae2.num === HwatooNumberEnum.num2) {
+                        // 알리 (1, 2)
+                    User.jokbo = HwatooJokboEnum.Jokbotype3
+                    User.priority = 16;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num1 && 
+                User.pae2.num === HwatooNumberEnum.num4) {
+                    // 독사 (1, 4)
+                    User.jokbo = HwatooJokboEnum.Jokbotype4
+                    User.priority = 15;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num1 && 
+                User.pae2.num === HwatooNumberEnum.num9) {
+                    // 구삥 (1, 9)
+                    User.jokbo = HwatooJokboEnum.Jokbotype5
+                    User.priority = 14;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num1 && 
+                User.pae2.num === HwatooNumberEnum.num10) {
+                    // 장삥 (1, 10)
+                    User.jokbo = HwatooJokboEnum.Jokbotype6
+                    User.priority = 13;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num4 && 
+                User.pae2.num === HwatooNumberEnum.num10) {
+                    // 장사 (4, 10)
+                    User.jokbo = HwatooJokboEnum.Jokbotype7
+                    User.priority = 12;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num4 && 
+                User.pae2.num === HwatooNumberEnum.num6) {
+                    // 세륙 (4, 6)
+                    User.jokbo = HwatooJokboEnum.Jokbotype8
+                    User.priority = 11;
+                    return true;
+                }
+                else {
+                    return undefined;
+                }
+            }
+            
+            // 기타 족보 확인
+            function checkExtraJokbo(User) {
+                if ((User.pae1.num === HwatooNumberEnum.num4 && User.pae1.type === HwatooTypeEnum.HwatooType2) &&
+                (User.pae2.num === HwatooNumberEnum.num9 && User.pae2.type === HwatooTypeEnum.HwatooType2)) {
+                    // 멍텅구리 (4 끗, 9 끗)
+                    User.jokbo = HwatooJokboEnum.Jokbotype9;
+                    User.priority = HwatooNumberEnum.num4 + HwatooNumberEnum.num9 - 10;
+                    return true;
+                }
+                else if (User.pae1.num === HwatooNumberEnum.num4 &&
+                User.pae1.num === HwatooNumberEnum.num9) {
+                    // 구사 (4, 9, 둘 다 끗이 아닐 때만)
+                    User.jokbo = HwatooJokboEnum.Jokbotype10;
+                    User.priority = HwatooNumberEnum.num4 + HwatooNumberEnum.num9 - 10; //3
+                    return true;
+                }
+                else if ((User.pae1.num === HwatooNumberEnum.num4 && User.pae1.type === HwatooTypeEnum.HwatooType2) &&
+                (User.pae2.num === HwatooNumberEnum.num7 && User.pae2.type === HwatooTypeEnum.HwatooType2)) {
+                    // 암행어사 (4 끗, 7 끗)
+                    User.jokbo = HwatooJokboEnum.Jokbotype11;
+                    User.priority = HwatooNumberEnum.num4 + HwatooNumberEnum.num7 - 10;
+                    return true;
+                }
+                else if ((User.pae1.num === HwatooNumberEnum.num3 && User.pae1.type === HwatooTypeEnum.HwatooType1) &&
+                (User.pae2.num === HwatooNumberEnum.num7 && User.pae2.type === HwatooTypeEnum.HwatooType2)) {
+                    // 땡잡이 (3 광, 7 끗)
+                    User.jokbo = HwatooJokboEnum.Jokbotype12;
+                    User.priority = HwatooNumberEnum.num3 + HwatooNumberEnum.num7 - 10;
+                    return true;
+                }
+                else {
+                    return undefined;
+                }
+            }
+            
+            // 끗 확인
+            function checkAddNum (User) {
+                User.priority = User.pae1.num + User.pae2.num > 9 ? User.pae1.num + User.pae2.num - 10 : User.pae1.num + User.pae2.num;
+                if (User.priority === 9) {
+                    User.jokbo = "갑오";
+                } else if (User.priority === 0) {
+                    User.jokbo = "망통";
+                } else {
+                    User.jokbo = String(User.priority) + HwatooJokboEnum.Jokbotype13;
+                }
+                return true;
+            }
+            
+            // 족보 결정
+            function makeJokbo (User) {
+            
+                // 임시 유저 클래스에 유저 정보 삽입
+                let tmpUser = User;
+                
+                // 숫자 오름차순
+                if (tmpUser.pae1.num > tmpUser.pae2.num) {
+                    let tmp = tmpUser.pae1;
+                    tmpUser.pae1 = tmpUser.pae2;
+                    tmpUser.pae2 = tmp;
+                }
+                
+                // 타입 오름차순
+                if ((tmpUser.pae1.num === tmpUser.pae2.num) && (tmpUser.pae1.type > tmpUser.pae2.type)) {
+                    let tmp = tmpUser.pae1;
+                    tmpUser.pae1 = tmpUser.pae2;
+                    tmpUser.pae2 = tmp;    
+                }
+
+                // 광땡 확인
+                const gwangDdaeng = checkGwangDdaeng(tmpUser); 
+                if(gwangDdaeng != undefined) {
+                    document.write(tmpUser.jokbo, "<br>");
+                    return 0;
+                }
+                
+                // 땡 확인
+                const ddaeng = checkDdaeng(tmpUser);
+                if (ddaeng != undefined) {
+                    document.write(tmpUser.jokbo, "<br>");
+                    return 0;
+                }
+                const middleJokbo = checkMiddleJokbo(tmpUser); 
+                if (middleJokbo != undefined) {
+                    document.write(tmpUser.jokbo, "<br>");
+                    return 0;
+                } 
+                const extraJokbo = checkExtraJokbo(tmpUser);
+                if (extraJokbo != undefined) {
+                    document.write(tmpUser.jokbo, "<br>");
+                    return 0;
+                } 
+                const addNum = checkAddNum(tmpUser);
+                if (addNum != undefined) {
+                    document.write(tmpUser.jokbo, "<br>");
+                    return 0;
+                } else {
+                    document.write("오류", "<br>");
+                    return undefined;
+                }
+                
+            }
+            
+            // 나가리(구사, 멍텅구리 있을 시 재경기)
+            function nagari (User1, User2) {
+                let nagari = false;
+                // 멍텅구리가 있는데 광땡이 없을 시
+                if ((User1.jokbo === HwatooJokboEnum.Jokbotype9 || User2.jokbo === HwatooJokboEnum.Jokbotype9) && 
+                (User1.priority < 27 || User2.priority < 27)) {
+                    nagari = true;
+                } // 구사가 있는데 땡 이상이 없을 시
+                else if ((User1.jokbo === HwatooJokboEnum.Jokbotype10  || User2.jokbo === HwatooJokboEnum.Jokbotype10) && 
+                (User1.priority < 17 || User2.priority < 17)) {
+                    nagari = true;
+                }
+                
+                return nagari;
+            }
+            
+            // 특수 상황(암행어사, 땡잡이)
+            function extraSituation(User1, User2) {
+                let extraSituation = 0;
+            
+                // 암행어사 : 13, 18광땡을 잡음
+                if ((User1.jokbo === HwatooJokboEnum.Jokbotype11 || User2.jokbo === HwatooJokboEnum.Jokbotype11) &&
+                (User1.priority === 27 || User2.priority === 27)) {
+                    extraSituation = User1.jokbo === HwatooJokboEnum.Jokbotype11 ? 1 : 2;
+                } // 땡잡이 : 장땡 미만의 땡을 잡음
+                else if ((User1.jokbo === HwatooJokboEnum.Jokbotype12 || User2.jokbo === HwatooJokboEnum.Jokbotype12) &&
+                ((User1.priority < 26) && (User1.priority > 16) || (User2.priority < 26) && (User2.priority > 16))) {
+                    extraSituation = User1.jokbo === HwatooJokboEnum.Jokbotype12 ? 1 : 2;;
+                }
+            
+                return extraSituation;
+            }
+            
+            // 한 판 0 : 무승부, 1 : 유저1 승리, 2 : 유저2 승리
+            function play(User1, User2) {
+                let result = 0;
+            
+                if (User1.priority > User2.priority) {
+                    User1.plusWinCount();
+                    result = 1;
+                } 
+                else if (User1.priority < User2.priority) {
+                    User2.plusWinCount();
+                    result = 2;
+                }
+            
+                return result;
+            }
+            
+            // 섯다 한 판의 승자 출력
+            function printWinPlayer(User) {
+                document.write(displayStringEnum.displaystr2, User.name, displayStringEnum.displaystr6, User.wincount, displayStringEnum.displaystr3, displayStringEnum.displaystr1);
+                document.write("<hr>");
+                document.write("<hr>");
+            }
+            
+            // 무승부 출력
+            function printDraw() {
+                document.write(displayStringEnum.displaystr10, displayStringEnum.displaystr1);
+                document.write("<hr>");
+                document.write("<hr>");
+            }
+            
+            // 총 게임 승자 출력
+            function printGameWinPlayer(User) {
+                document.write(User.name, displayStringEnum.displaystr9, displayStringEnum.displaystr1);
+            }
+            
+            // ====================================================== 함수 부 ======================================================
+            
+            //  선수 입장
+                let User1 = new User();
+                User1.setName("고니");
+                
+                let User2 = new User();
+                User2.setName("아귀");
+            
+                // 총 게임 승자를 구분하기 위한 변수 1 : User1, 2 : User2
+                let winplayer = 0;
+            
+            while(true) {
+                // 나가리, 특수 상황 없어서 게임을 이어서 할지 말지 정하는 변수
+                let keepgoing = true;
+
+                // 화투패 생성
+                initialazeHwatoopaeList(HwatoopaeDAO);
+                // 화투패 정렬
+                HwatoopaeDAO.sortHwatoopaeList();
+                
+                // 패 확인(임시)
+                
+                User1.setPae(getHandHwatoo(), getHandHwatoo());
+                
+                // 플레이어1 이름
+                document.write(User1.name, "<br>");
+                // 플레이어1 패1 정보
+                document.write(User1.pae1.num, User1.pae1.type, " ");
+                // 플레이어1 패2 정보
+                document.write(User1.pae2.num, User1.pae2.type, " ");
+                
+                // 받은 패로 족보 생성
+                makeJokbo(User1);
+                
+                document.write("<hr>");
+                
+                User2.setPae(getHandHwatoo(), getHandHwatoo());
+                
+                // 플레이어2 이름
+                document.write(User2.name, "<br>");
+                // 플레이어2 패1 정보
+                document.write(User2.pae1.num, User2.pae1.type, " ");
+                // 플레이어2 패2 정보
+                document.write(User2.pae2.num, User2.pae2.type, " ");
+                
+                // 받은 패로 족보 생성
+                makeJokbo(User2);
+                
+                document.write("<hr>");
+                
+                // 나가리(멍텅구리, 구사) 여부 확인
+                let na = nagari(User1, User2);
+                if (na === true) {
+                    document.write(displayStringEnum.displaystr8, displayStringEnum.displaystr1);
+                    continue;
+                }
+                
+                // 특수족보(암행어사, 땡잡이) 여부 확인, 1 : User1, 2 : User2 승리
+                let extra = extraSituation(User1, User2);
+                if (extra === 1) {
+                    User1.plusWinCount();
+                    printWinPlayer(User1);
+                    keepgoing = false;
+                } else if (extra === 2) {
+                    User2.plusWinCount();
+                    printWinPlayer(User2);
+                    keepgoing = false;
+                }
+                
+                if (keepgoing === true) {
+                    // 둘 다 없으면 게임 진행, 0 : 무승부, 1 : User1, 2 : User2 승리
+                    let result = play(User1, User2);
+                    if (result === 0) {
+                        printDraw();
+                    } else if (result === 1) {
+                        printWinPlayer(User1);
+                    } else if (result === 2) {
+                        printWinPlayer(User2);
+                    }
+                }
+
+                // 승리 횟수 10회일 시 반복문 탈출
+                if (User1.wincount === 10 || User2.wincount === 10) {
+                    winplayer = User1.wincount === 10 ? 1 : 2;
+                    break;
+                }
+            }
+            
+            // 1 : User1, 2 : User2 승리 출력
+            if (winplayer === 1) {
+                printGameWinPlayer(User1);
+            } else if (winplayer === 2) {
+                printGameWinPlayer(User2);
+            }
+        </script>
+
+    </body>
+</html>
