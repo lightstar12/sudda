@@ -161,14 +161,14 @@ let initializeHwatooList = function(hwatooList) {
 /**
 * 유저들에게 화투를 나눠주는 함수
 * @param {array} 화투패 리스트
- * @returns {object} 화투 오브젝트
+* @returns {object} 화투 오브젝트
 */ 
 let getHandHwatoo = function(hwatooList) {
 const returnHwatoo = hwatooList[hwatooList.length - 1];
 
 hwatooList.pop();
 
-return returnHwatoo;
+	return returnHwatoo;
 }
 
 // 족보 결정
@@ -177,7 +177,7 @@ return returnHwatoo;
 /**
 * 광땡인지 아닌지 확인하는 함수
 * @param {array} 유저의 패 리스트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let checkGwangDdaeng = function(paeList) {
 	// 38광땡
@@ -198,7 +198,7 @@ let checkGwangDdaeng = function(paeList) {
 /**
 * 땡인지 아닌지 확인하는 함수
 * @param {array} 유저의 패 리스트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let checkDdaeng = function(paeList) {
 	if (paeList[0].num === paeList[1].num) {
@@ -213,7 +213,7 @@ let checkDdaeng = function(paeList) {
 /**
 * 중간족보인지 아닌지 확인하는 함수
 * @param {array} 유저의 패 리스트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let checkMiddleJokbo = function(paeList) {
 	// 알리 (1, 2)
@@ -229,15 +229,15 @@ let checkMiddleJokbo = function(paeList) {
 	paeList[1].num === HwatooNumberEnum.num9) {
 		return HwatooJokboEnum.JokboType5;
 	} // 장삥 (1, 10)
-	 else if (paeList[0].num === HwatooNumberEnum.num1 && 
+	else if (paeList[0].num === HwatooNumberEnum.num1 && 
 	paeList[1].num === HwatooNumberEnum.num10) {
 		return HwatooJokboEnum.JokboType6;
 	} // 장사 (4, 9)
-	 else if (paeList[0].num === HwatooNumberEnum.num4 && 
+	else if (paeList[0].num === HwatooNumberEnum.num4 && 
 	paeList[1].num === HwatooNumberEnum.num9) {
 		return HwatooJokboEnum.JokboType7;
 	} // 세륙 (4, 6)
-	 else if (paeList[0].num === HwatooNumberEnum.num4 && 
+	else if (paeList[0].num === HwatooNumberEnum.num4 && 
 	paeList[1].num === HwatooNumberEnum.num6) {
 		return HwatooJokboEnum.JokboType8;
 	}
@@ -246,7 +246,7 @@ let checkMiddleJokbo = function(paeList) {
 /**
 * 특수족보인지 아닌지 확인하는 함수
 * @param {array} 유저의 패 리스트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let checkExtraJokbo = function(paeList) {
 	// 멍텅구리 (4끗, 9끗)
@@ -271,7 +271,7 @@ let checkExtraJokbo = function(paeList) {
 /**
 * 몇끗인지 확인하는 함수
 * @param {array} 유저의 패 리스트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let checkAddNum = function(paeList) {
 	const addNum = paeList[0].num + paeList[1].num;
@@ -289,7 +289,7 @@ let checkAddNum = function(paeList) {
 /**
 * 유저의 패를 보고 족보를 반환하는 함수
 * @param {object} 유저 오브젝트
- * @returns {String} 족보 이름
+* @returns {String} 족보 이름
 */
 let insertJokbo = function(user) {
 	let tmpUser = Object.assign({}, user);
@@ -333,7 +333,7 @@ let insertJokbo = function(user) {
 /**
 * 족보를 보고 우선순위를 반환하는 함수
 * @param {String} 족보 이름
- * @returns {number} 우선 순위
+* @returns {number} 우선 순위
 */
 let insertPriority = function(jokbo) {
 	// 족보에 "광땡" 이라는 글자가 들어갔는 지 확인
@@ -401,31 +401,62 @@ let insertPriority = function(jokbo) {
 /**
 * 나가리 여부를 판단하고 결과를 반환 함수
 * @param {object, object} 유저 정보
- * @returns {boolean} 나가리 여부
+* @returns {boolean} 나가리 발생 여부
 */
 let nagari = function(user1, user2) {
 // 멍텅구리가 있는데 광땡이 없을 시
-if ((user1.jokbo.name === HwatooJokboEnum.JokboType9 && user2.jokbo.priority < 27) ||
-(user2.jokbo.name === HwatooJokboEnum.JokboType9 && user1.jokbo.priority < 27)) {
-	return true;
-}
-else if ((user1.jokbo.name === HwatooJokboEnum.JokboType10 && user2.jokbo.priority < 17) ||
-(user2.jokbo.name === HwatooJokboEnum.JokboType10 && user1.jokbo.priority < 17)) {
-	return true;
-}
+	if ((user1.jokbo.name === HwatooJokboEnum.JokboType9 && user2.jokbo.priority < 27) ||
+	(user2.jokbo.name === HwatooJokboEnum.JokboType9 && user1.jokbo.priority < 27)) {
+		return true;
+	}
+	else if ((user1.jokbo.name === HwatooJokboEnum.JokboType10 && user2.jokbo.priority < 17) ||
+	(user2.jokbo.name === HwatooJokboEnum.JokboType10 && user1.jokbo.priority < 17)) {
+		return true;
+	}
 }
 
 /**
-* 나가리 여부를 판단하고 결과를 반환 함수
+* 특수상황 여부를 판단하고 결과를 반환 함수
 * @param {object, object} 유저 정보
- * @returns {boolean} 나가리 여부
+* @returns {boolean} 특수상황 발생 여부
 */
 let extraSituation = function(user1, user2) {
-if ((user1.jokbo.name === HwatooJokboEnum.JokboType9 && user2.jokbo.priority < 27) ||
-(user2.jokbo.name === HwatooJokboEnum.JokboType9 && user1.jokbo.priority < 27)) {
-	return true;
+	if ((user1.jokbo.name === HwatooJokboEnum.JokboType11 && user2.jokbo.priority === 27) ||
+	(user2.jokbo.name === HwatooJokboEnum.JokboType11 && user1.jokbo.priority === 27)) {
+		return true;
+	}
+	else if ((user1.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user2.jokbo.priority < 26 && user2.jokbo.priority > 26)) ||
+	(user2.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user1.jokbo.priority < 26 && user1.jokbo.priority > 26))) {
+		return true;
+	}
 }
+
+/**
+* 나가리, 특수상황이 없어 게임을 진행하는 함수
+* @param {object, object} 유저 정보
+* @returns {nubmer} 무승부 : 0 / 유저1 승리 : 1 / 유저2 승리 : 2 
+*/
+let getGame = function (user1, user2) {
+	if (user1.jokbo.priority > user2.jokbo.priority) {
+		return 1;
+	}
+	else if (user2.jokbo.priority > user1.jokbo.priority) {
+		return 2;
+	} else {
+		return 0;
+	}
 }
+
+/**
+* 게임 함수
+* @param {object, object} 유저 정보
+*/
+let play = function(user1, user2, hwatooList) {
+	initializeHwatooList(hwatooList);
+	hwatooList.sortList();
+}
+
+
 
 // ===================================  함수부 ===================================
 
