@@ -157,16 +157,20 @@ let initializeHwatooList = function(hwatooList) {
 
 }
 
+let resetPaeList = function(user) {
+	user.paeList.pop();
+	user.paeList.pop();
+}
 
 /**
-* 유저들에게 화투를 나눠주는 함수
+* 유저에게 화투를 나눠주는 함수
 * @param {array} 화투패 리스트
 * @returns {object} 화투 오브젝트
 */ 
 let getHandHwatoo = function(hwatooList) {
-const returnHwatoo = hwatooList[hwatooList.length - 1];
+	const returnHwatoo = hwatooList[hwatooList.length - 1];
 
-hwatooList.pop();
+	hwatooList.pop();
 
 	return returnHwatoo;
 }
@@ -262,7 +266,7 @@ let checkExtraJokbo = function(paeList) {
 	(paeList[1].num === HwatooNumberEnum.num7 && paeList[1].type === HawtooTypeEnum.HwatooType2)) {
 		return HwatooJokboEnum.JokboType11;
 	}  // 땡잡이 (3광, 7끗)
-	else if ((paeList[0].num === HwatooNumberEnum.num3 && paeList[0].type === HawtooTypeEnum.HwatooType2) &&
+	else if ((paeList[0].num === HwatooNumberEnum.num3 && paeList[0].type === HawtooTypeEnum.HwatooType1) &&
 	(paeList[1].num === HwatooNumberEnum.num7 && paeList[1].type === HawtooTypeEnum.HwatooType2)) {
 		return HwatooJokboEnum.JokboType12;
 	}
@@ -333,7 +337,7 @@ let insertJokbo = function(user) {
 /**
 * 족보를 보고 우선순위를 반환하는 함수
 * @param {String} 족보 이름
-* @returns {number} 우선 순위
+* @returns {Number} 우선 순위
 */
 let insertPriority = function(jokbo) {
 	// 족보에 "광땡" 이라는 글자가 들어갔는 지 확인
@@ -408,7 +412,7 @@ let nagari = function(user1, user2) {
 	if ((user1.jokbo.name === HwatooJokboEnum.JokboType9 && user2.jokbo.priority < 27) ||
 	(user2.jokbo.name === HwatooJokboEnum.JokboType9 && user1.jokbo.priority < 27)) {
 		return true;
-	}
+	} // 구사가 있는데 땡 이상이 없을 시
 	else if ((user1.jokbo.name === HwatooJokboEnum.JokboType10 && user2.jokbo.priority < 17) ||
 	(user2.jokbo.name === HwatooJokboEnum.JokboType10 && user1.jokbo.priority < 17)) {
 		return true;
@@ -418,23 +422,36 @@ let nagari = function(user1, user2) {
 /**
 * 특수상황 여부를 판단하고 결과를 반환 함수
 * @param {object, object} 유저 정보
-* @returns {boolean} 특수상황 발생 여부
+* @returns {Number} 승자 번호 반환 / 1 : user1, 2 : user2
 */
 let extraSituation = function(user1, user2) {
+	// 암행어사 : 13, 18광땡을 잡음
 	if ((user1.jokbo.name === HwatooJokboEnum.JokboType11 && user2.jokbo.priority === 27) ||
 	(user2.jokbo.name === HwatooJokboEnum.JokboType11 && user1.jokbo.priority === 27)) {
-		return true;
-	}
-	else if ((user1.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user2.jokbo.priority < 26 && user2.jokbo.priority > 26)) ||
-	(user2.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user1.jokbo.priority < 26 && user1.jokbo.priority > 26))) {
-		return true;
+		// user1이 암행어사일 경우
+		if (user1.jokbo.name === HwatooJokboEnum.JokboType11 ) {
+			return 1;
+		} // user2가 암행어사일 경우
+		else {
+			return 2;
+		}
+	} // 땡잡이 : 장땡 미만의 땡을 잡음
+	else if ((user1.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user2.jokbo.priority < 26 && user2.jokbo.priority > 16)) ||
+	(user2.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user1.jokbo.priority < 26 && user1.jokbo.priority > 16))) {
+		// user1이 땡잡이일 경우
+		if (user1.jokbo.name === HwatooJokboEnum.Jokbotype12 ) {
+			return 1;
+		} // user2가 땡잡이일 경우
+		else {
+			return 2;
+		}
 	}
 }
 
 /**
 * 나가리, 특수상황이 없어 게임을 진행하는 함수
 * @param {object, object} 유저 정보
-* @returns {nubmer} 무승부 : 0 / 유저1 승리 : 1 / 유저2 승리 : 2 
+* @returns {Nubmer} 무승부 : 0 / 유저1 승리 : 1 / 유저2 승리 : 2 
 */
 let getGame = function (user1, user2) {
 	if (user1.jokbo.priority > user2.jokbo.priority) {
@@ -448,32 +465,129 @@ let getGame = function (user1, user2) {
 }
 
 /**
-* 게임 함수
-* @param {object, object} 유저 정보
+* 유저의 승점을 1점 올려 주는 함수
+* @param {object} 유저 정보
 */
-let play = function(user1, user2, hwatooList) {
-	initializeHwatooList(hwatooList);
-	hwatooList.sortList();
+let getWinPoint = function(user) {
+	user.winCount += 1;
 }
 
+/**
+* 게임 함수
+* @param {object, object, array} 유저 정보, 화투패 리스트
+* @returns {Nubmer} 무승부 : 0 / 유저1 승리 : 1 / 유저2 승리 : 2 / 나가리 : 3
+*/
+let play = function(user1, user2, hwatooList) {
+	// =========  화투 패 초기화  =========
+	initializeHwatooList(hwatooList);
+	hwatooList.sortList();
 
+	// =========  두 유저가 화투를 2장 씩 받음 =========
+	user1.paeList.push(getHandHwatoo(hwatooList.list));
+	user1.paeList.push(getHandHwatoo(hwatooList.list));
+	
+	user2.paeList.push(getHandHwatoo(hwatooList.list));
+	user2.paeList.push(getHandHwatoo(hwatooList.list));
+	
+	// ========= 화투 패를 보고 족보와 우선 순위 부여  =========
+	user1.jokbo.name = insertJokbo(user1);
+	user1.jokbo.priority = insertPriority(user1.jokbo.name);
+	
+	user2.jokbo.name = insertJokbo(user2);
+	user2.jokbo.priority = insertPriority(user2.jokbo.name);
+	
+	printPaeList(user1);
+	printPaeList(user2);
+
+	console.log(Object.values(user1.jokbo));
+	console.log(Object.values(user2.jokbo));
+
+	// =========  나가리 여부 확인  =========
+	if(nagari(user1, user2)) {
+		return 3;
+	}
+	
+	// =========  특수 상황 발생 여부 확인  =========
+	if (extraSituation(user1, user2) !== undefined) {
+		return extraSituation(user1, user2);
+	}
+
+	// ========= 둘 다 없으면 게임 진행  =========
+	return getGame(user1, user2);
+
+}
+
+/**
+* 플레이어가 받은 패를 출력하는 함수
+* @param {object} 유저 오브젝트
+*/
+let printPaeList = function(user) {
+	console.log(user.name + displayStringEnum.displayStr4 + user.paeList[0]["num"] + user.paeList[0]["type"] + 
+	displayStringEnum.displayStr5 + user.paeList[1]["num"] + user.paeList[1]["type"] + displayStringEnum.displayStr6
+	+ user.jokbo.name + displayStringEnum.displayStr7);
+}
+
+/**
+* 나가리를 출력하는 함수
+*/
+let printNaragi = function() {
+	console.log(displayStringEnum.displayStr8);
+}
+
+/**
+* 게임 한 판 승리 유저와 누적 승수를 출력하는 함수
+* @param {object} 유저 오브젝트
+*/
+let printWinnerWinCount = function(user) {
+	console.log(displayStringEnum.displayStr2 + user.name + displayStringEnum.displayStr6 + user.winCount + displayStringEnum.displayStr3);
+}
+
+/**
+* 게임 결과 무승부를 출력하는 함수
+*/
+let printDraw = function() {
+	console.log(displayStringEnum.displayStr10);
+}
+
+/**
+* 총 게임 승자를 출력하는 함수
+* @param {object} 유저 오브젝트
+*/
+let printWinner = function(user) {
+	console.log(user.name + displayStringEnum.displayStr9);
+}
 
 // ===================================  함수부 ===================================
 
-// console.log(hwatooList.list);
-
-initializeHwatooList(hwatooList);
-hwatooList.sortList();
-
-// for (let i = 0; i < hwatooList.list.length; i++) {
-// 	console.log(Object.entries(hwatooList.list[i]));
-	
-// }
-
 let goni = new User("고니");
-goni.paeList.push(getHandHwatoo(hwatooList.list));
-goni.paeList.push(getHandHwatoo(hwatooList.list));
+let agwi = new User("아귀");
 
-goni.jokbo.name = insertJokbo(goni);
-goni.jokbo.priority = insertPriority(goni.jokbo.name);
-console.log(Object.values(goni));
+let i = 1;
+while(true) {
+	console.log(`${i} 번째 판`);
+	resetPaeList(goni);
+	resetPaeList(agwi);
+	
+	const winPlayer = play(goni,agwi,hwatooList);
+	
+	if (winPlayer === 1) {
+		getWinPoint(goni);
+		printWinnerWinCount(goni);
+	} else if (winPlayer === 2) {
+		getWinPoint(agwi);
+		printWinnerWinCount(agwi);
+	} else if (winPlayer === 3) {
+		printNaragi();
+	} else {
+		printDraw();
+	}
+
+	if (goni.winCount === 10) {
+		printWinner(goni);
+		break;
+	} else if (agwi.winCount === 10) {
+		printWinner(agwi);
+		break;
+	}
+	i++;
+}
