@@ -30,7 +30,7 @@ const HwatooJokboEnum = {
 	JokboType9 : "멍텅구리",
 	JokboType10 : "구사",
 	JokboType11 : "암행어사",
-	JokboType12 : "땡잡이",
+	JokboType12 : "댕잡이", // 땡잡이라고 하면 insertPriority 함수의 분기문에서 오류 발생
 	JokboType13 : "끗",
 	JokboType14 : "갑오",
 	JokboType15 : "망통",
@@ -436,10 +436,10 @@ let extraSituation = function(user1, user2) {
 			return 2;
 		}
 	} // 땡잡이 : 장땡 미만의 땡을 잡음
-	else if ((user1.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user2.jokbo.priority < 26 && user2.jokbo.priority > 16)) ||
-	(user2.jokbo.name === HwatooJokboEnum.Jokbotype12 && (user1.jokbo.priority < 26 && user1.jokbo.priority > 16))) {
+	else if ((user1.jokbo.name === HwatooJokboEnum.JokboType12 && (user2.jokbo.priority < 26 && user2.jokbo.priority > 16)) ||
+	(user2.jokbo.name === HwatooJokboEnum.JokboType12 && (user1.jokbo.priority < 26 && user1.jokbo.priority > 16))) {
 		// user1이 땡잡이일 경우
-		if (user1.jokbo.name === HwatooJokboEnum.Jokbotype12 ) {
+		if (user1.jokbo.name === HwatooJokboEnum.JokboType12 ) {
 			return 1;
 		} // user2가 땡잡이일 경우
 		else {
